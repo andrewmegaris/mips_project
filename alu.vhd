@@ -1,0 +1,58 @@
+LIBRARY ieee;
+USE ieee.std_logic_1164.all;
+USE ieee.std_logic_arith.all;
+USE ieee.std_logic_signed.all;
+
+ENTITY ALU IS
+   PORT( 
+      A           : IN     std_logic_vector (31 DOWNTO 0);
+      ALU_control : IN     std_logic_vector (3 DOWNTO 0);
+      B           : IN     std_logic_vector (31 DOWNTO 0);
+      ALU_result  : OUT    std_logic_vector (31 DOWNTO 0);
+      zero        : OUT    std_logic;
+      overflow    : OUT    std_logic
+   );
+END ALU ;
+
+
+ARCHITECTURE behav OF ALU IS
+
+   -- Architecture declarations
+   CONSTANT zero_value : std_logic_vector(31 downto 0) := (others => '0');
+
+   -- Internal signal declarations
+   SIGNAL ALU_result_internal : std_logic_vector(31 DOWNTO 0);
+
+BEGIN
+    ALU_result <= ALU_result_internal;
+    zero <= '1' when (ALU_result_internal = zero_value) else '0';
+    ALUprocess : PROCESS(A, ALU_control, B)
+    BEGIN    
+        CASE ALU_control is
+        WHEN "0000" =>
+            ALU_result_internal <=  A and B;
+        WHEN "0001" =>
+            ALU_result_internal <=  A or B;
+        WHEN "0010" =>
+            ALU_result_internal <=  A + B;
+            
+        WHEN "0110" =>
+            ALU_result_internal <=  A - B;
+        
+        WHEN "0111" =>
+            IF  A < B THEN
+                ALU_result_internal <= "00000000000000000000000000000001";
+            ELSE
+                ALU_result_internal <= zero_value;
+            END IF;
+        WHEN OTHERS =>
+            ALU_result_internal <= zero_value;
+        END CASE;
+        IF ALU_CONTROL = "0010" THEN
+        overflow <= (((NOT A(31)) AND (NOT B(31)) AND ALU_result_internal(31))OR(A(31) AND B(31) AND (NOT ALU_result_internal(31))) );     
+        ELSIF ALU_CONTROL = "0110" THEN
+        overflow <= (((NOT A(31)) AND B(31) AND ALU_result_internal(31)) OR (A(31) AND (NOT B(31))  AND (NOT ALU_result_internal(31))));
+        END IF;
+      
+    END PROCESS;                                                                           
+END behav;
